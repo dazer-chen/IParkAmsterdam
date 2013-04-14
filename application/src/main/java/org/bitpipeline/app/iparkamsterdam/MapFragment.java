@@ -5,16 +5,18 @@
  */
 package org.bitpipeline.app.iparkamsterdam;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
 
-import org.bitpipeline.app.iparkamsterdam.ParkingAdviceFetcherTask.ParkingAdviceFetcherListener;
-import org.bitpipeline.app.iparkamsterdam.ParkingAdviceFetcherTask.ParkingAdviceResponse;
-import org.bitpipeline.app.iparkamsterdam.TouchOverlay.OnMapClickListener;
+import org.bitpipeline.app.iparkamsterdam.TouchOverlay.OnTargetClickListener;
+import org.bitpipeline.lib.parkshark.ParkingAdvice;
 import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.ItemizedIconOverlay;
 
 import android.annotation.TargetApi;
 import android.app.DatePickerDialog;
@@ -41,21 +43,19 @@ import com.actionbarsherlock.view.MenuItem;
 /**
  * 
  * @author mtavares */
-public class MapFragment extends SherlockFragment implements OnMapClickListener, OnDateSetListener, OnTimeSetListener {
-	static final private String LOG_TAG = "MapFragment";
+public class MapFragment extends SherlockFragment implements OnTargetClickListener, OnDateSetListener, OnTimeSetListener {
+	static final String LOG_TAG = "MapFragment";
 
 	static final private BoundingBoxE6 MAP_BOUNDS = new BoundingBoxE6 (
-			52.291, 4.756,
-			52.436, 5018);
-	static final private GeoPoint START_CENTER = new GeoPoint (52.373056, 4.894222);
+			52.436, 5.00,
+			52.289, 4.778);
 	static final private int START_ZOOM = 14;
 
-	private GeoPoint mapCenter = MapFragment.START_CENTER;
 	private int mapZoom = MapFragment.START_ZOOM;
 
 	private java.text.DateFormat dateFormat = null;
 	private java.text.DateFormat hourFormat = null;
-	
+
 	private MapView mapView = null;
 	private Context context = null;
 
@@ -65,6 +65,9 @@ public class MapFragment extends SherlockFragment implements OnMapClickListener,
 
 	private Calendar cal = null;
 	private int duration = 1; // in hours
+
+	private TouchOverlay touchOverlay = null;
+	private ItemizedIconOverlay<ParkingAdviceOverlayItem> advicesOverlay = null;
 
 	@Override
 	public void onCreate (Bundle savedInstanceState) {
@@ -84,11 +87,39 @@ public class MapFragment extends SherlockFragment implements OnMapClickListener,
 		this.mapView.setMultiTouchControls (true);
 
 		this.mapView.getController ().setZoom (this.mapZoom);
-		this.mapView.getController ().setCenter (this.mapCenter);
+		this.mapView.getController ().setCenter (MapFragment.MAP_BOUNDS.getCenter ());
+		this.mapView.setMinZoomLevel (Integer.valueOf (12));
+		this.mapView.setMaxZoomLevel (null);
+		this.mapView.setScrollableAreaLimit (MapFragment.MAP_BOUNDS);
 
-		TouchOverlay touchOverlay = new TouchOverlay (this.context);
-		touchOverlay.setOnMapClickListener (this);
-		this.mapView.getOverlays ().add (0, touchOverlay);
+		this.touchOverlay = new TouchOverlay (this.context);
+		this.touchOverlay.setOnMapClickListener (this);
+
+		this.advicesOverlay = new ItemizedIconOverlay<ParkingAdviceOverlayItem> (
+				this.context,
+				new ArrayList<ParkingAdviceOverlayItem> (),
+				new org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener<ParkingAdviceOverlayItem> () {
+					@Override
+					public boolean onItemSingleTapUp (int index, ParkingAdviceOverlayItem item) {
+						System.out.println ("Click on item " + index);
+						ParkingAdvice advice = item.getParkingAdvice ();
+						Toast.makeText (MapFragment.this.context,
+								String.format ("%s\n%.2f €", advice.getAddress (), advice.getPrice ()),
+								Toast.LENGTH_SHORT).show ();
+						return true;
+					}
+
+					@Override
+					public boolean onItemLongPress (int index, ParkingAdviceOverlayItem item) {
+						System.out.println ("LongPress on item " + index);
+						ParkingAdvice advice = item.getParkingAdvice ();
+						Toast.makeText (MapFragment.this.context,
+								String.format ("%s\n%.2f €", advice.getAddress (), advice.getPrice ()),
+								Toast.LENGTH_LONG).show ();
+						return true;
+					}});
+		this.mapView.getOverlays ().add (this.touchOverlay);
+		this.mapView.getOverlays ().add (this.advicesOverlay);
 		return this.mapView;
 	}
 
@@ -137,8 +168,12 @@ public class MapFragment extends SherlockFragment implements OnMapClickListener,
 						this.cal.get (Calendar.DAY_OF_MONTH)).show ();
 				break;
 			case R.id.map_fragment_menu_hour:
-				new TimePickerDialog (this.context, this, 0, 0, true).show ();
-				System.out.println ("menu hour");
+				new TimePickerDialog (
+						this.context,
+						this,
+						this.cal.get (Calendar.HOUR_OF_DAY),
+						this.cal.get (Calendar.MINUTE),
+						true).show ();
 				break;
 			case R.id.map_fragment_menu_duration:
 				System.out.println ("menu duration");
@@ -147,27 +182,40 @@ public class MapFragment extends SherlockFragment implements OnMapClickListener,
 		return super.onOptionsItemSelected (item);
 	}
 
+	private boolean fetching = false;
 	@Override
-	public void onClick (MapView mapView, GeoPoint geoPoint) {
+	public void onClick (GeoPoint geoPoint) {
+		if (this.fetching) {
+			Log.i (MapFragment.LOG_TAG, "Attempted to fetch parking advice when a query is already running");
+			return;
+		}
+		this.fetching = true;
+		
 		float lat = (float) (geoPoint.getLatitudeE6 () / 1E6);
 		float lon = (float) (geoPoint.getLongitudeE6 () / 1E6);
+
+		Log.i (MapFragment.LOG_TAG,
+				String.format (Locale.UK,
+						"Fetching parking info to park at %.2f, %.2f", lat, lon));
 		Toast.makeText (this.context,
-				String.format (Locale.getDefault (), "Fetching parking info to park at %.2f, %.2f",
-						lat, lon),
-						Toast.LENGTH_SHORT).show ();
-		new ParkingAdviceFetcherTask (new ParkingAdviceFetcherListener() {
+				this.context.getResources ().getString (R.string.map_fragment_toast_fetch),
+				Toast.LENGTH_SHORT).show ();
+
+		new ParkingAdviceFetcherTask (new ParkingAdviceFetcherTask.ParkingAdviceFetcherListener () {
 			@Override
-			public void setResponse (ParkingAdviceResponse response) {
+			public void setResponse (ParkingAdviceFetcherTask.ParkingAdviceResponse response) {
+				MapFragment.this.touchOverlay.setLockPosition (false);
 				if (response.exception != null) {
 					Log.e (MapFragment.LOG_TAG, "Failed to get the parking advice", response.exception);
 					return;
 				}
 				if (response.parkingAdvices == null) { 
-					System.out.println ("Null answers...");
+					Toast.makeText (MapFragment.this.context,
+							MapFragment.this.context.getResources ().getString (R.string.map_fragment_toast_no_advice),
+							Toast.LENGTH_SHORT).show ();
 					return;
 				}
-				System.out.println ("Found advices: " + response.parkingAdvices.size ());
-				
+				showAdvices (response.parkingAdvices);
 			}
 		}).execute (new ParkingAdviceFetcherTask.ParkingAdviceRequest (
 				this.cal.get (Calendar.DAY_OF_WEEK)-1,
@@ -176,6 +224,14 @@ public class MapFragment extends SherlockFragment implements OnMapClickListener,
 				this.duration,
 				lat,
 				lon));
+	}
+
+	private void showAdvices (List<ParkingAdvice> advices) {
+		this.advicesOverlay.removeAllItems ();
+		for (ParkingAdvice advice : advices)
+			this.advicesOverlay.addItem (new ParkingAdviceOverlayItem (advice));
+		this.mapView.invalidate ();
+		this.fetching = false;
 	}
 
 	@Override

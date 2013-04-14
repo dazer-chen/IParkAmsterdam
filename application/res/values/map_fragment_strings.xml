@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
 	<string name="map_fragment_menu_date">Date</string>
 	<string name="map_fragment_menu_hour">Hour</string>
 	<string name="map_fragment_menu_duration">Duration</string>
-
+	<string name="map_fragment_toast_fetch">Getting parking advice</string>
+	<string name="map_fragment_toast_no_advice">No advice found</string>
 </resources>
