@@ -1,0 +1,18 @@
+# eclipse project files
+.classpath
+.project
+.settings
+.pmd
+
+# build created artifacts
+bin
+gen
+target
+
+# android sdk local property files
+local.properties
+ant.properties
+
+# the keystore will not be checked in (hehe)
+bitpipeline.keystore
+
