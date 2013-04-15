@@ -28,7 +28,7 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 	public static final int DESCRIPTION_BOX_PADDING = 3;
 	public static final int DESCRIPTION_BOX_CORNERWIDTH = 3;
 
-	public static final int DESCRIPTION_LINE_HEIGHT = 12;
+	public static final int DESCRIPTION_LINE_HEIGHT = 20;
 	/** Additional to <code>DESCRIPTION_LINE_HEIGHT</code>. */
 	public static final int DESCRIPTION_TITLE_EXTRA_LINE_HEIGHT = 2;
 
@@ -42,7 +42,7 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 	// ===========================================================
 
 	protected final int mMarkerFocusedBackgroundColor;
-	protected final Paint mMarkerBackgroundPaint, mDescriptionPaint, mTitlePaint;
+	protected final Paint mMarkerBackgroundPaint, descriptionPaint, titlePaint;
 
 	protected Drawable mMarkerFocusedBase;
 	protected int mFocusedItemIndex;
@@ -86,11 +86,11 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 
 		this.mMarkerBackgroundPaint = new Paint(); // Color is set in onDraw(...)
 
-		this.mDescriptionPaint = new Paint();
-		this.mDescriptionPaint.setAntiAlias(true);
-		this.mTitlePaint = new Paint();
-		this.mTitlePaint.setFakeBoldText(true);
-		this.mTitlePaint.setAntiAlias(true);
+		this.descriptionPaint = new Paint();
+		this.descriptionPaint.setAntiAlias(true);
+		this.titlePaint = new Paint();
+		this.titlePaint.setFakeBoldText(true);
+		this.titlePaint.setAntiAlias(true);
 		this.unSetFocusedItem();
 	}
 
@@ -175,7 +175,7 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 		 * efficient.
 		 */
 		final float[] widths = new float[itemDescription.length()];
-		this.mDescriptionPaint.getTextWidths(itemDescription, widths);
+		this.descriptionPaint.getTextWidths(itemDescription, widths);
 
 		final StringBuilder sb = new StringBuilder();
 		int maxWidth = 0;
@@ -214,7 +214,7 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 		/* Add the last line to the rest to the buffer. */
 		if (i != lastStop) {
 			final String rest = itemDescription.substring(lastStop, i);
-			maxWidth = Math.max(maxWidth, (int) this.mDescriptionPaint.measureText(rest));
+			maxWidth = Math.max(maxWidth, (int) this.descriptionPaint.measureText(rest));
 			sb.append(rest);
 		}
 		final String[] lines = sb.toString().split("\n");
@@ -222,7 +222,7 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 		/*
 		 * The title also needs to be taken into consideration for the width calculation.
 		 */
-		final int titleWidth = (int) this.mDescriptionPaint.measureText(itemTitle);
+		final int titleWidth = (int) this.descriptionPaint.measureText(itemTitle);
 
 		maxWidth = Math.max(maxWidth, titleWidth);
 		final int descWidth = Math.min(maxWidth, DESCRIPTION_MAXWIDTH);
@@ -240,7 +240,7 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 		this.mMarkerBackgroundPaint.setColor(Color.BLACK);
 		c.drawRoundRect(new RectF(descBoxLeft - 1, descBoxTop - 1, descBoxRight + 1,
 				descBoxBottom + 1), DESCRIPTION_BOX_CORNERWIDTH, DESCRIPTION_BOX_CORNERWIDTH,
-				this.mDescriptionPaint);
+				this.descriptionPaint);
 		this.mMarkerBackgroundPaint.setColor(this.mMarkerFocusedBackgroundColor);
 		c.drawRoundRect(new RectF(descBoxLeft, descBoxTop, descBoxRight, descBoxBottom),
 				DESCRIPTION_BOX_CORNERWIDTH, DESCRIPTION_BOX_CORNERWIDTH,
@@ -251,18 +251,26 @@ public class ItemizedOverlayWithLabel<Item extends OverlayItem> extends Itemized
 
 		/* Draw all the lines of the description. */
 		for (int j = lines.length - 1; j >= 0; j--) {
-			c.drawText(lines[j].trim(), descLeft, descTextLineBottom, this.mDescriptionPaint);
+			c.drawText(lines[j].trim(), descLeft, descTextLineBottom, this.descriptionPaint);
 			descTextLineBottom -= DESCRIPTION_LINE_HEIGHT;
 		}
 		/* Draw the title. */
 		c.drawText(itemTitle, descLeft, descTextLineBottom - DESCRIPTION_TITLE_EXTRA_LINE_HEIGHT,
-				this.mTitlePaint);
+				this.titlePaint);
 		c.drawLine(descBoxLeft, descTextLineBottom, descBoxRight, descTextLineBottom,
-				mDescriptionPaint);
+				descriptionPaint);
 
 		/*
 		 * Finally draw the marker base. This is done in the end to make it look better.
 		 */
 		Overlay.drawAt(c, markerFocusedBase, mFocusedScreenCoords.x, mFocusedScreenCoords.y, false);
+	}
+
+	public void setTitleTextSize (float textSize) {
+		this.titlePaint.setTextSize (textSize);
+	}
+
+	public void setDescriptionTextSize (float textSize) {
+		this.descriptionPaint.setTextSize (textSize);
 	}
 }

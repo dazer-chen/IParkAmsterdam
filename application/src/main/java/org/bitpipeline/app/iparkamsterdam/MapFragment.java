@@ -17,8 +17,6 @@ import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
-import org.osmdroid.views.overlay.ItemizedOverlayWithFocus;
 
 import android.annotation.TargetApi;
 import android.app.DatePickerDialog;
@@ -141,6 +139,10 @@ public class MapFragment
 					}});
 		this.advicesOverlay.setDrawFocusedItem (true);
 		this.advicesOverlay.setFocusItemsOnTap (true);
+		this.advicesOverlay.setTitleTextSize (
+				this.context.getResources ().getDimension (R.dimen.map_fragment_label_title_text_size));
+		this.advicesOverlay.setDescriptionTextSize (
+				this.context.getResources ().getDimension (R.dimen.map_fragment_label_description_text_size));
 		
 		this.mapView.getOverlays ().add (this.touchOverlay);
 		this.mapView.getOverlays ().add (this.advicesOverlay);
