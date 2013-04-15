@@ -13,6 +13,7 @@ import java.util.Locale;
 
 import org.bitpipeline.app.iparkamsterdam.TouchOverlay.OnTargetClickListener;
 import org.bitpipeline.lib.parkshark.ParkingAdvice;
+import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
@@ -49,12 +50,15 @@ public class MapFragment
 		implements OnTargetClickListener, OnDateSetListener, OnTimeSetListener, NumberPickerDialog.OnNumberSetListener {
 	static final String LOG_TAG = "MapFragment";
 
+	static final private String MAP_ZOOM_LEVEL = "zoom";
+	static final private String MAP_CENTER = "center";
+	static final private String MAP_LOCATION = "location";
+	static final private String MAP_PARKING_ADVICES = "advices";
+
 	static final private BoundingBoxE6 MAP_BOUNDS = new BoundingBoxE6 (
 			52.436, 5.00,
 			52.289, 4.778);
 	static final private int START_ZOOM = 14;
-
-	private int mapZoom = MapFragment.START_ZOOM;
 
 	private java.text.DateFormat dateFormat = null;
 	private java.text.DateFormat hourFormat = null;
@@ -89,13 +93,36 @@ public class MapFragment
 		this.mapView.setBuiltInZoomControls (true);
 		this.mapView.setMultiTouchControls (true);
 
-		this.mapView.getController ().setZoom (this.mapZoom);
-		this.mapView.getController ().setCenter (MapFragment.MAP_BOUNDS.getCenter ());
+		int mapZoom = 0;
+		GeoPoint mapCenter = null;
+		GeoPoint location = null;
+		ArrayList<ParkingAdvice> parkingAdvices = null;
+
+		if (savedInstanceState != null) {
+			mapZoom = savedInstanceState.getInt (MapFragment.MAP_ZOOM_LEVEL);
+			int[] coords = savedInstanceState.getIntArray (MapFragment.MAP_CENTER);
+			if (coords != null)
+				mapCenter = new GeoPoint (coords[0], coords[1]);
+			coords = savedInstanceState.getIntArray (MapFragment.MAP_LOCATION);
+			if (coords != null)
+				location = new GeoPoint (coords[0], coords[1]);
+			parkingAdvices = savedInstanceState.getParcelableArrayList (MapFragment.MAP_PARKING_ADVICES);
+		}
+
+		if (mapZoom == 0)
+			mapZoom = MapFragment.START_ZOOM;
+		if (mapCenter == null)
+			mapCenter = MapFragment.MAP_BOUNDS.getCenter ();
+
+		this.mapView.getController ().setZoom (mapZoom);
+		this.mapView.getController ().setCenter (mapCenter);
 		this.mapView.setMinZoomLevel (Integer.valueOf (12));
 		this.mapView.setMaxZoomLevel (null);
 		this.mapView.setScrollableAreaLimit (MapFragment.MAP_BOUNDS);
 
 		this.touchOverlay = new TouchOverlay (this.context);
+		if (location != null)
+			this.touchOverlay.setLocation (location);
 		this.touchOverlay.setOnMapClickListener (this);
 
 		this.advicesOverlay = new ItemizedIconOverlay<ParkingAdviceOverlayItem> (
@@ -104,7 +131,6 @@ public class MapFragment
 				new org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener<ParkingAdviceOverlayItem> () {
 					@Override
 					public boolean onItemSingleTapUp (int index, ParkingAdviceOverlayItem item) {
-						System.out.println ("Click on item " + index);
 						ParkingAdvice advice = item.getParkingAdvice ();
 						Toast.makeText (MapFragment.this.context,
 								String.format ("%s\n%.2f €", advice.getAddress (), advice.getPrice ()),
@@ -114,7 +140,6 @@ public class MapFragment
 
 					@Override
 					public boolean onItemLongPress (int index, ParkingAdviceOverlayItem item) {
-						System.out.println ("LongPress on item " + index);
 						ParkingAdvice advice = item.getParkingAdvice ();
 						Toast.makeText (MapFragment.this.context,
 								String.format ("%s\n%.2f €", advice.getAddress (), advice.getPrice ()),
@@ -123,6 +148,8 @@ public class MapFragment
 					}});
 		this.mapView.getOverlays ().add (this.touchOverlay);
 		this.mapView.getOverlays ().add (this.advicesOverlay);
+		if (parkingAdvices != null)
+			showAdvices (parkingAdvices);
 		return this.mapView;
 	}
 
@@ -147,6 +174,28 @@ public class MapFragment
 		this.durationItem = menu.findItem (R.id.map_fragment_menu_duration);
 
 		updateMenuEntries ();
+	}
+
+	@Override
+	public void onSaveInstanceState (Bundle outState) {
+		super.onSaveInstanceState (outState);
+		outState.putInt (MapFragment.MAP_ZOOM_LEVEL, this.mapView.getZoomLevel ());
+		IGeoPoint mapPoint = this.mapView.getMapCenter ();
+		int[] coords = new int[2];
+		coords[0] = mapPoint.getLatitudeE6 ();
+		coords[1] = mapPoint.getLongitudeE6 ();
+		outState.putIntArray (MapFragment.MAP_CENTER, coords);
+		mapPoint = this.touchOverlay.getMyLocation ();
+		if (mapPoint != null) {
+			coords[0] = mapPoint.getLatitudeE6 ();
+			coords[1] = mapPoint.getLongitudeE6 ();
+			outState.putIntArray (MapFragment.MAP_LOCATION, coords);
+		}
+		ArrayList<ParkingAdvice> parkingAdvice = new ArrayList<ParkingAdvice> (this.advicesOverlay.size ());
+		for (int i=0; i<this.advicesOverlay.size (); i++) {
+			parkingAdvice.add (this.advicesOverlay.getItem (i).getParkingAdvice ());
+		}
+		outState.putParcelableArrayList (MapFragment.MAP_PARKING_ADVICES, parkingAdvice);
 	}
 
 	private void updateMenuEntries () {
