@@ -25,5 +25,7 @@
 		</p>
 		</body>
 		</html>]]></string>
+		<string name="number_picker_dialog_title">Pick a number</string>
+		<string name="number_picker_dialog_button_ok">Done</string>
 	
 </resources>

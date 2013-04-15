@@ -32,6 +32,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.DatePicker;
+import android.widget.NumberPicker;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -43,7 +44,9 @@ import com.actionbarsherlock.view.MenuItem;
 /**
  * 
  * @author mtavares */
-public class MapFragment extends SherlockFragment implements OnTargetClickListener, OnDateSetListener, OnTimeSetListener {
+public class MapFragment
+		extends SherlockFragment
+		implements OnTargetClickListener, OnDateSetListener, OnTimeSetListener, NumberPickerDialog.OnNumberSetListener {
 	static final String LOG_TAG = "MapFragment";
 
 	static final private BoundingBoxE6 MAP_BOUNDS = new BoundingBoxE6 (
@@ -176,7 +179,14 @@ public class MapFragment extends SherlockFragment implements OnTargetClickListen
 						true).show ();
 				break;
 			case R.id.map_fragment_menu_duration:
-				System.out.println ("menu duration");
+				new NumberPickerDialog (
+						this.context,
+						this,
+						1,
+						24,
+						1)
+				.setPickerTitle (R.string.map_fragment_dialog_duration_title)
+				.show ();
 				break;
 		}
 		return super.onOptionsItemSelected (item);
@@ -244,6 +254,12 @@ public class MapFragment extends SherlockFragment implements OnTargetClickListen
 	public void onTimeSet (TimePicker view, int hourOfDay, int minute) {
 		this.cal.set (Calendar.HOUR_OF_DAY, hourOfDay);
 		this.cal.set (Calendar.MINUTE, minute);
+		updateMenuEntries ();
+	}
+
+	@Override
+	public void onNumberSet (NumberPicker view, int value) {
+		this.duration = value;
 		updateMenuEntries ();
 	}
 
