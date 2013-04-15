@@ -59,20 +59,20 @@ public class TouchOverlay extends SimpleLocationOverlay {
 			else
 				return false;
 
-			if (event.getEventTime () - this.clickDownTime < 500
-					&& Math.abs (this.clickUpCoords.x - this.clickDownCoords.x) < 10 
+			if (Math.abs (this.clickUpCoords.x - this.clickDownCoords.x) < 10 
 					&& Math.abs (this.clickUpCoords.y - this.clickDownCoords.y) < 10) {
 				IGeoPoint igeoPoint = mapView.getProjection ().fromPixels (event.getX (), event.getY ());
 				GeoPoint geoPoint = new GeoPoint (igeoPoint.getLatitudeE6 (), igeoPoint.getLongitudeE6 ());
-				if (isEventOnTarget (event, mapView)) {
+				if (event.getEventTime () - this.clickDownTime < android.view.ViewConfiguration.getLongPressTimeout ()
+						&& isEventOnTarget (event, mapView)) {
 					this.lockPosition = true;
 					this.onTargetClickListener.onClick (getMyLocation ());
 					return true;
-				}
-				if (this.lockPosition == false) {
-					System.out.println ("Setting target");
+				} else if (this.lockPosition == false
+						&& event.getEventTime () - this.clickDownTime >= android.view.ViewConfiguration.getLongPressTimeout ()) {
 					setLocation (geoPoint);
 					mapView.invalidate ();
+					return true;
 				}
 			}
 			this.isAClick = false;
