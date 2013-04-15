@@ -18,6 +18,7 @@ import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
+import org.osmdroid.views.overlay.ItemizedOverlayWithFocus;
 
 import android.annotation.TargetApi;
 import android.app.DatePickerDialog;
@@ -74,7 +75,7 @@ public class MapFragment
 	private int duration = 1; // in hours
 
 	private TouchOverlay touchOverlay = null;
-	private ItemizedIconOverlay<ParkingAdviceOverlayItem> advicesOverlay = null;
+	private ItemizedOverlayWithLabel<ParkingAdviceOverlayItem> advicesOverlay = null;
 
 	@Override
 	public void onCreate (Bundle savedInstanceState) {
@@ -125,27 +126,22 @@ public class MapFragment
 			this.touchOverlay.setLocation (location);
 		this.touchOverlay.setOnMapClickListener (this);
 
-		this.advicesOverlay = new ItemizedIconOverlay<ParkingAdviceOverlayItem> (
+		this.advicesOverlay = new ItemizedOverlayWithLabel<ParkingAdviceOverlayItem> (
 				this.context,
 				new ArrayList<ParkingAdviceOverlayItem> (),
 				new org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener<ParkingAdviceOverlayItem> () {
 					@Override
 					public boolean onItemSingleTapUp (int index, ParkingAdviceOverlayItem item) {
-						ParkingAdvice advice = item.getParkingAdvice ();
-						Toast.makeText (MapFragment.this.context,
-								String.format ("%s\n%.2f €", advice.getAddress (), advice.getPrice ()),
-								Toast.LENGTH_SHORT).show ();
 						return true;
 					}
 
 					@Override
 					public boolean onItemLongPress (int index, ParkingAdviceOverlayItem item) {
-						ParkingAdvice advice = item.getParkingAdvice ();
-						Toast.makeText (MapFragment.this.context,
-								String.format ("%s\n%.2f €", advice.getAddress (), advice.getPrice ()),
-								Toast.LENGTH_LONG).show ();
 						return true;
 					}});
+		this.advicesOverlay.setDrawFocusedItem (true);
+		this.advicesOverlay.setFocusItemsOnTap (true);
+		
 		this.mapView.getOverlays ().add (this.touchOverlay);
 		this.mapView.getOverlays ().add (this.advicesOverlay);
 		if (parkingAdvices != null)
