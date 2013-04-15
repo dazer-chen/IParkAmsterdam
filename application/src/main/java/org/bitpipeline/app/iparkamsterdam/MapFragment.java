@@ -53,6 +53,12 @@ public class MapFragment
 	static final private String MAP_CENTER = "center";
 	static final private String MAP_LOCATION = "location";
 	static final private String MAP_PARKING_ADVICES = "advices";
+	static final private String DURATION = "duration";
+	static final private String DATE_YEAR = "year";
+	static final private String DATE_MONTH = "month";
+	static final private String DATE_DAY = "day";
+	static final private String DATE_HOUR = "hour";
+	static final private String DATE_MIN = "min";
 
 	static final private BoundingBoxE6 MAP_BOUNDS = new BoundingBoxE6 (
 			52.436, 5.00,
@@ -69,7 +75,7 @@ public class MapFragment
 	private MenuItem hourItem = null;
 	private MenuItem durationItem = null;
 
-	private Calendar cal = null;
+	private Calendar cal = new GregorianCalendar (Locale.getDefault ());
 	private int duration = 1; // in hours
 
 	private TouchOverlay touchOverlay = null;
@@ -92,13 +98,13 @@ public class MapFragment
 		this.mapView.setBuiltInZoomControls (true);
 		this.mapView.setMultiTouchControls (true);
 
-		int mapZoom = 0;
+		int mapZoom = MapFragment.START_ZOOM;
 		GeoPoint mapCenter = null;
 		GeoPoint location = null;
 		ArrayList<ParkingAdvice> parkingAdvices = null;
 
 		if (savedInstanceState != null) {
-			mapZoom = savedInstanceState.getInt (MapFragment.MAP_ZOOM_LEVEL);
+			mapZoom = savedInstanceState.getInt (MapFragment.MAP_ZOOM_LEVEL, mapZoom);
 			int[] coords = savedInstanceState.getIntArray (MapFragment.MAP_CENTER);
 			if (coords != null)
 				mapCenter = new GeoPoint (coords[0], coords[1]);
@@ -106,10 +112,15 @@ public class MapFragment
 			if (coords != null)
 				location = new GeoPoint (coords[0], coords[1]);
 			parkingAdvices = savedInstanceState.getParcelableArrayList (MapFragment.MAP_PARKING_ADVICES);
+			this.duration = savedInstanceState.getInt (MapFragment.DURATION, this.duration);
+
+			this.cal.set (Calendar.YEAR, savedInstanceState.getInt (MapFragment.DATE_YEAR, this.cal.get (Calendar.YEAR)));
+			this.cal.set (Calendar.MONTH, savedInstanceState.getInt (MapFragment.DATE_MONTH, this.cal.get (Calendar.MONTH)));
+			this.cal.set (Calendar.DAY_OF_MONTH, savedInstanceState.getInt (MapFragment.DATE_DAY, this.cal.get (Calendar.DAY_OF_MONTH)));
+			this.cal.set (Calendar.HOUR_OF_DAY, savedInstanceState.getInt (MapFragment.DATE_HOUR, this.cal.get (Calendar.HOUR_OF_DAY)));
+			this.cal.set (Calendar.MINUTE, savedInstanceState.getInt (MapFragment.DATE_MIN, this.cal.get (Calendar.MINUTE)));
 		}
 
-		if (mapZoom == 0)
-			mapZoom = MapFragment.START_ZOOM;
 		if (mapCenter == null)
 			mapCenter = MapFragment.MAP_BOUNDS.getCenter ();
 
@@ -165,7 +176,6 @@ public class MapFragment
 		this.context = getActivity ();
 		this.dateFormat = DateFormat.getDateFormat (this.context);
 		this.hourFormat = DateFormat.getTimeFormat (this.context);
-		this.cal = new GregorianCalendar (Locale.getDefault ());
 
 		this.dateItem = menu.findItem (R.id.map_fragment_menu_date);
 		this.hourItem = menu.findItem (R.id.map_fragment_menu_hour);
@@ -194,6 +204,13 @@ public class MapFragment
 			parkingAdvice.add (this.advicesOverlay.getItem (i).getParkingAdvice ());
 		}
 		outState.putParcelableArrayList (MapFragment.MAP_PARKING_ADVICES, parkingAdvice);
+		outState.putInt (MapFragment.DURATION, this.duration);
+
+		outState.putInt (MapFragment.DATE_YEAR, this.cal.get (Calendar.YEAR));
+		outState.putInt (MapFragment.DATE_MONTH, this.cal.get (Calendar.MONTH));
+		outState.putInt (MapFragment.DATE_DAY, this.cal.get (Calendar.DAY_OF_MONTH));
+		outState.putInt (MapFragment.DATE_HOUR, this.cal.get (Calendar.HOUR_OF_DAY));
+		outState.putInt (MapFragment.DATE_MIN, this.cal.get (Calendar.MINUTE));
 	}
 
 	private void updateMenuEntries () {
