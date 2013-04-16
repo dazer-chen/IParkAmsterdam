@@ -159,6 +159,8 @@ public class MapFragment
 		this.mapView.getOverlays ().add (this.advicesOverlay);
 		if (parkingAdvices != null)
 			showAdvices (parkingAdvices);
+
+		updateMenuEntries ();
 		return this.mapView;
 	}
 
@@ -249,7 +251,7 @@ public class MapFragment
 							this,
 							1,
 							24,
-							1)
+							this.duration)
 					.setPickerTitle (R.string.map_fragment_dialog_duration_title)
 					.show ();
 				} else {
@@ -258,19 +260,10 @@ public class MapFragment
 							this,
 							1,
 							24,
-							1)
+							this.duration)
 					.setPickerTitle (R.string.map_fragment_dialog_duration_title)
 					.show ();
 				}
-				try {
-				} catch (RuntimeException re) {
-					Log.e (MapFragment.LOG_TAG, "RunTime dealing with " + NumberPickerDialog.class.getName (), re);
-				} catch (Exception e) {
-					Log.e (MapFragment.LOG_TAG, "Exception dealing with " + NumberPickerDialog.class.getName (), e);
-				} catch (Error error) {
-					Log.e (MapFragment.LOG_TAG, "Error dealing with " + NumberPickerDialog.class.getName (), error);
-				}
-				 
 				break;
 		}
 		return super.onOptionsItemSelected (item);
