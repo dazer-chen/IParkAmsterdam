@@ -11,7 +11,7 @@ Copyright 2012 J. Miguel P. Tavares
 	<groupId>org.bitpipeline.app</groupId>
 	<artifactId>iparkamsterdam</artifactId>
 	<name>I Park Amsterdam</name>
-	<version>0.1</version>
+	<version>0.2</version>
 	<packaging>apk</packaging>
 
 	<developers>
