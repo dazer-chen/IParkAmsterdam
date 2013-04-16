@@ -46,7 +46,7 @@ import com.actionbarsherlock.view.MenuItem;
  * @author mtavares */
 public class MapFragment
 		extends SherlockFragment
-		implements OnTargetClickListener, OnDateSetListener, OnTimeSetListener, NumberPickerDialog.OnNumberSetListener {
+		implements OnTargetClickListener, OnDateSetListener, OnTimeSetListener, OnNumberSetListener {
 	static final String LOG_TAG = "MapFragment";
 
 	static final private String MAP_ZOOM_LEVEL = "zoom";
@@ -243,14 +243,34 @@ public class MapFragment
 						true).show ();
 				break;
 			case R.id.map_fragment_menu_duration:
-				new NumberPickerDialog (
-						this.context,
-						this,
-						1,
-						24,
-						1)
-				.setPickerTitle (R.string.map_fragment_dialog_duration_title)
-				.show ();
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+					new NumberPickerDialog (
+							this.context,
+							this,
+							1,
+							24,
+							1)
+					.setPickerTitle (R.string.map_fragment_dialog_duration_title)
+					.show ();
+				} else {
+					new NumberPickerDialogOld (
+							this.context,
+							this,
+							1,
+							24,
+							1)
+					.setPickerTitle (R.string.map_fragment_dialog_duration_title)
+					.show ();
+				}
+				try {
+				} catch (RuntimeException re) {
+					Log.e (MapFragment.LOG_TAG, "RunTime dealing with " + NumberPickerDialog.class.getName (), re);
+				} catch (Exception e) {
+					Log.e (MapFragment.LOG_TAG, "Exception dealing with " + NumberPickerDialog.class.getName (), e);
+				} catch (Error error) {
+					Log.e (MapFragment.LOG_TAG, "Error dealing with " + NumberPickerDialog.class.getName (), error);
+				}
+				 
 				break;
 		}
 		return super.onOptionsItemSelected (item);

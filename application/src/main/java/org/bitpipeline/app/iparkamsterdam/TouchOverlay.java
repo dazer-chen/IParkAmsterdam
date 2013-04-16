@@ -14,7 +14,6 @@ import org.osmdroid.views.overlay.SimpleLocationOverlay;
 import android.content.Context;
 import android.graphics.Point;
 import android.view.MotionEvent;
-import android.view.MotionEvent.PointerCoords;
 
 /**
  * 
@@ -26,8 +25,8 @@ public class TouchOverlay extends SimpleLocationOverlay {
 
 	private boolean isAClick = false;
 	private long clickDownTime = Long.MAX_VALUE;
-	private PointerCoords clickDownCoords = new PointerCoords ();
-	private PointerCoords clickUpCoords = new PointerCoords ();
+	private float[] clickDownCoords = new float[] {Float.NaN, Float.NaN};
+	private float[] clickUpCoords = new float[] {Float.NaN, Float.NaN};
 	private OnTargetClickListener onTargetClickListener = null;
 
 	private int clickTargetToleranceHeight;
@@ -44,7 +43,8 @@ public class TouchOverlay extends SimpleLocationOverlay {
 	@Override
 	public boolean onDown (MotionEvent event, MapView mapView) {
 		if (event.getPointerCount () > 0) {
-			event.getPointerCoords (0, this.clickDownCoords);
+			this.clickDownCoords[0] = event.getX ();
+			this.clickDownCoords[1] = event.getY ();
 			this.clickDownTime = event.getEventTime ();
 			this.isAClick = true;
 			return false;
@@ -54,13 +54,11 @@ public class TouchOverlay extends SimpleLocationOverlay {
 
 	private boolean onUp (MotionEvent event, MapView mapView) {
 		if (this.onTargetClickListener != null && this.isAClick) {
-			if (event.getPointerCount () > 0)
-				event.getPointerCoords (0, this.clickUpCoords);
-			else
-				return false;
+			this.clickUpCoords[0] = event.getX ();
+			this.clickUpCoords[1] = event.getY ();
 
-			if (Math.abs (this.clickUpCoords.x - this.clickDownCoords.x) < 10 
-					&& Math.abs (this.clickUpCoords.y - this.clickDownCoords.y) < 10) {
+			if (Math.abs (this.clickUpCoords[0] - this.clickDownCoords[0]) < 10 
+					&& Math.abs (this.clickUpCoords[1] - this.clickDownCoords[1]) < 10) {
 				IGeoPoint igeoPoint = mapView.getProjection ().fromPixels (event.getX (), event.getY ());
 				GeoPoint geoPoint = new GeoPoint (igeoPoint.getLatitudeE6 (), igeoPoint.getLongitudeE6 ());
 				if (event.getEventTime () - this.clickDownTime < android.view.ViewConfiguration.getLongPressTimeout ()
@@ -84,7 +82,6 @@ public class TouchOverlay extends SimpleLocationOverlay {
 		this.lockPosition = lock;
 	}
 	
-	private MotionEvent.PointerCoords eventCoords = new MotionEvent.PointerCoords ();
 	private Point myLocationPixels = new Point ();
 
 	private boolean isEventOnTarget (MotionEvent e, MapView mapView) {
@@ -92,18 +89,13 @@ public class TouchOverlay extends SimpleLocationOverlay {
 		if (myLocationGP == null)
 			return false;
 
-		if (e.getPointerCount () < 1)
-			return false;
-
-		e.getPointerCoords (0, eventCoords);
-
 		this.myLocationPixels = pointFromGeoPoint (myLocationGP, mapView);
 		if (this.myLocationPixels == null) { // out of the screen
 			return false;
 		}
 
-		int eX = (int) this.eventCoords.x;
-		int eY = (int) this.eventCoords.y;
+		int eX = (int) e.getX ();
+		int eY = (int) e.getY ();
 		if (eX >= this.myLocationPixels.x - this.clickTargetToleranceWidth
 				&& eX <= this.myLocationPixels.x + this.clickTargetToleranceWidth
 				&& eY >= this.myLocationPixels.y - this.clickTargetToleranceHeight
@@ -122,13 +114,12 @@ public class TouchOverlay extends SimpleLocationOverlay {
 			case MotionEvent.ACTION_UP:
 				return onUp (event, mapView);
 			default:
-				if (event.getPointerCount () > 0) {
-					event.getPointerCoords (0, this.clickUpCoords);
-					
-					if (Math.abs (this.clickUpCoords.x - this.clickDownCoords.x) >= 10 
-							|| Math.abs (this.clickUpCoords.y - this.clickDownCoords.y) >= 10) {
-						this.isAClick = false;
-					}
+				this.clickUpCoords[0] = event.getX ();
+				this.clickUpCoords[1] = event.getY ();
+				
+				if (Math.abs (this.clickUpCoords[0] - this.clickDownCoords[0]) >= 10 
+						|| Math.abs (this.clickUpCoords[1] - this.clickDownCoords[1]) >= 10) {
+					this.isAClick = false;
 				}
 				break;
 		}

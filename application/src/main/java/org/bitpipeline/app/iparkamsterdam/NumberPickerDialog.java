@@ -20,6 +20,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,10 +28,6 @@ import android.widget.NumberPicker;
 import android.widget.NumberPicker.OnValueChangeListener;
 
 public class NumberPickerDialog extends AlertDialog implements OnClickListener, OnValueChangeListener {
-	public interface OnNumberSetListener {
-		void onNumberSet (NumberPicker view, int value);
-	}
-
 	static final private String VALUE = "value";
 	static final private String MIN_VALUE = "min_value";
 	static final private String MAX_VALUE = "max_value";
@@ -50,17 +47,20 @@ public class NumberPickerDialog extends AlertDialog implements OnClickListener, 
 		setTitle (R.string.number_picker_dialog_title);
 
 		Context themeContext = getContext ();
-		setButton (BUTTON_POSITIVE, themeContext.getText (R.string.number_picker_dialog_button_ok), this);
+		setButton (BUTTON_POSITIVE, themeContext.getText (R.string.number_picker_dialog_button_set), this);
 
 		LayoutInflater inflater = (LayoutInflater) themeContext.getSystemService (Context.LAYOUT_INFLATER_SERVICE);
 		View view = inflater.inflate (R.layout.number_picker_dialog, null);
 		setView (view);
 		this.numberPicker = (NumberPicker) view.findViewById (R.id.number_picker_dialog_number_picker);
 
-		this.numberPicker.setMinValue (min);
-		this.numberPicker.setMaxValue (max);
-		this.numberPicker.setValue (value);
-		this.numberPicker.setOnValueChangedListener (this);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			this.numberPicker.setMinValue (min);
+			this.numberPicker.setMaxValue (max);
+			this.numberPicker.setValue (value);
+		} else {
+			this.numberPicker.setOnValueChangedListener (this);
+		}
 	}
 
 	public void onClick (DialogInterface dialog, int which) {
@@ -76,7 +76,9 @@ public class NumberPickerDialog extends AlertDialog implements OnClickListener, 
 	}
 
 	public NumberPickerDialog setValue (int value) {
-		this.numberPicker.setValue (value);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			this.numberPicker.setValue (value);
+		}
 		return this;
 	}
 
@@ -105,4 +107,10 @@ public class NumberPickerDialog extends AlertDialog implements OnClickListener, 
 		// TODO Auto-generated method stub
 		
 	}
+
+//	@Override
+//	public void onValueChange (NumberPicker picker, int oldVal, int newVal) {
+//		// TODO Auto-generated method stub
+//		
+//	}
 }
