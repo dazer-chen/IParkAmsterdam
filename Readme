@@ -1,0 +1,5 @@
+To compile using proguard:
+  $ mvn -Prelease package android:zipalign
+
+To compile without obfuscation:
+  $ mvn package android:zipalign
