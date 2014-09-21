@@ -65,6 +65,7 @@ Copyright 2012 J. Miguel P. Tavares
       </activation>
       <properties>
 	<skipObfuscation>false</skipObfuscation>
+	<android.release>true</android.release>
       </properties>
     </profile>
   </profiles>
